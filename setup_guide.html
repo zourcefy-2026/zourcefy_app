@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Zourcefy Group Buy - Setup Guide</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Outfit:wght@500;700;800&display=swap');
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      line-height: 1.6;
+      margin: 0;
+      padding: 40px;
+      background-color: #ffffff;
+      -webkit-print-color-adjust: exact;
+    }
+
+    h1,
+    h2,
+    h3 {
+      font-family: 'Outfit', sans-serif;
+      color: #0f172a;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      padding: 30px;
+      border-radius: 12px;
+      color: #ffffff;
+      margin-bottom: 40px;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+
+    .header h1 {
+      color: #ffffff;
+      margin: 0;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+    }
+
+    .header p {
+      margin: 8px 0 0 0;
+      font-size: 15px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background-color: #38bdf8;
+      color: #0369a1;
+      margin-top: 10px;
+    }
+
+    h2 {
+      font-size: 20px;
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 8px;
+      margin-top: 30px;
+      color: #0f172a;
+    }
+
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+    }
+
+    .card-title span {
+      background-color: #e2e8f0;
+      color: #475569;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-right: 10px;
+      font-weight: 600;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 13px;
+      background-color: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #0f172a;
+    }
+
+    pre {
+      background-color: #0f172a;
+      color: #f8fafc;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 15px 0;
+    }
+
+    pre code {
+      background-color: transparent;
+      color: #f8fafc;
+      padding: 0;
+      border-radius: 0;
+      font-size: 12px;
+    }
+
+    ul {
+      padding-left: 20px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .footer {
+      margin-top: 50px;
+      text-align: center;
+      font-size: 12px;
+      color: #94a3b8;
+      border-top: 1px solid #f1f5f9;
+      padding-top: 15px;
+    }
+
+    @media print {
+      body {
+        padding: 20px;
+      }
+
+      .header {
+        box-shadow: none;
+      }
+
+      .page-break {
+        page-break-before: always;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <h1>Zourcefy Group Buy</h1>
+    <p>Shopify App Development Setup Guide</p>
+    <div class="badge">Active Configuration</div>
+  </div>
+
+  <h2>1. Current Stack Architecture</h2>
+  <div class="card">
+    <div class="card-title"><span>Framework</span>React Router v7</div>
+    Uses the modern React Router Single-Page App Framework with Vite bundling and type generation support.
+  </div>
+  <div class="card">
+    <div class="card-title"><span>Database</span>Prisma & SQLite</div>
+    SQLite local database (<code>prisma/dev.sqlite</code>) handles active pools and member tracking.
+  </div>
+  <div class="card">
+    <div class="card-title"><span>UI System</span>Shopify Polaris</div>
+    Polaris components wrapped inside a root AppProvider to match the Shopify admin design tokens.
+  </div>
+
+  <h2>2. Implemented Fixes</h2>
+
+  <div class="card">
+    <div class="card-title"><span>Fix 1</span>Resolved useContext / Duplicate Context Error</div>
+    Uninstalled duplicate <code>react-router-dom</code> dependency. Updated <code>vite.config.ts</code> with
+    <code>optimizeDeps.include</code> settings for <code>react</code>, <code>react-dom</code>, and
+    <code>react-router</code> to enforce singleton resolution in development.
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>Fix 2</span>Resolved Sibling Route Mapping (Blank Screen)</div>
+    Renamed <code>app.pools.tsx</code> to <code>app.pools._index.tsx</code>. This prevents React Router from
+    interpreting the list page as a layout for <code>/app/pools/new</code>, allowing sibling routes to render correctly
+    inside the <code>/app</code> layout.
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>Fix 3</span>Shopify App Bridge Session Loader</div>
+    Added authentication loaders to <code>app.pools.new.tsx</code> and <code>app.additional.tsx</code> to guarantee that
+    App Bridge security and CSP headers are written for every page accessed.
+  </div>
+
+  <div class="page-break"></div>
+
+  <h2>3. Local Development Run Guide</h2>
+  <p>To run the app locally and test changes in the Shopify development store:</p>
+
+  <pre><code># 1. Generate client and run database migrations
+npx prisma generate
+npx prisma migrate dev --name init
+
+# 2. Run the Shopify app CLI dev server
+npm run dev</code></pre>
+
+  <p>Access the app dashboard via the stable Shopify Admin link:</p>
+  <code>https://admin.shopify.com/store/zourcefy-dev/apps/zourcefy-group-buy/app/pools</code>
+
+  <h2>4. Roadmap Roadmap</h2>
+  <ul>
+    <li><strong>Version Control:</strong> Initialize git repository and commit current codebase.</li>
+    <li><strong>Theme App Extension:</strong> Build the customer-facing Liquid block for the product page (to display
+      pool targets and "Join Pool" button).</li>
+    <li><strong>Shopify Function:</strong> Implement Product Discount API in Rust or JS to dynamically apply discounts
+      at checkout when a pool completes.</li>
+  </ul>
+
+  <div class="footer">
+    Zourcefy Developer Documentation • Generated June 2026
+  </div>
+
+</body>
+
+</html>
