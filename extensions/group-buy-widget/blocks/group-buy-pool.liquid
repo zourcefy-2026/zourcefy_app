@@ -1,0 +1,510 @@
+<div id="zourcefy-group-buy-container" class="zourcefy-widget-hidden" data-product-id="{{ product.id }}">
+  <div class="zourcefy-card">
+    <!-- Header -->
+    <div class="zourcefy-header">
+      <div class="zourcefy-badge-wrapper">
+        <span class="zourcefy-badge">Active Group Buy</span>
+      </div>
+      <div id="zourcefy-discount-tag" class="zourcefy-discount-tag">Unlocks --% Off</div>
+    </div>
+
+    <!-- Product Title -->
+    <h3 id="zourcefy-product-title" class="zourcefy-title">Loading procurement pool...</h3>
+
+    <!-- Stats & Progress -->
+    <div class="zourcefy-stats">
+      <div class="zourcefy-stat-item">
+        <span class="zourcefy-label">Current Volume</span>
+        <strong id="zourcefy-current-qty">0 Tons</strong>
+      </div>
+      <div class="zourcefy-stat-item">
+        <span class="zourcefy-label">Target Volume</span>
+        <strong id="zourcefy-target-qty">0 Tons</strong>
+      </div>
+    </div>
+
+    <div class="zourcefy-progress-container">
+      <div id="zourcefy-progress-bar" class="zourcefy-progress-bar" style="width: 0%;"></div>
+    </div>
+
+    <div class="zourcefy-meta-info">
+      <span id="zourcefy-member-count" class="zourcefy-members">0 participants joined</span>
+      <span id="zourcefy-status-text" class="zourcefy-status-text">--% reached</span>
+    </div>
+
+    <!-- Interactive CTA Area -->
+    <div id="zourcefy-cta-area" class="zourcefy-cta-area">
+      {% if customer %}
+        <form id="zourcefy-join-form" class="zourcefy-form">
+          <input type="hidden" name="productId" value="{{ product.id }}">
+          <input type="hidden" name="customerId" value="{{ customer.id }}">
+          <input type="hidden" name="customerEmail" value="{{ customer.email }}">
+          
+          <div class="zourcefy-input-group">
+            <label for="zourcefy-qty-input" class="zourcefy-input-label">Volume to Commit (Tons):</label>
+            <div class="zourcefy-qty-wrapper">
+              <input 
+                id="zourcefy-qty-input" 
+                type="number" 
+                name="quantity" 
+                min="0.1" 
+                step="0.1" 
+                value="1" 
+                required 
+                class="zourcefy-input"
+              >
+              <span class="zourcefy-qty-unit">Tons</span>
+            </div>
+          </div>
+
+          <button id="zourcefy-submit-btn" type="submit" class="zourcefy-btn">
+            <span class="btn-text">Join Procurement Pool</span>
+            <span class="btn-loader zourcefy-hidden"></span>
+          </button>
+        </form>
+      {% else %}
+        <div class="zourcefy-guest-notice">
+          <p>You must be signed in as a business customer to join this procurement pool.</p>
+          <a href="{{ routes.account_login_url }}?checkout_url={{ request.path }}" class="zourcefy-btn zourcefy-btn-secondary">
+            Sign In to Join Group Buy
+          </a>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Message Alerts -->
+    <div id="zourcefy-message-box" class="zourcefy-message-box zourcefy-hidden"></div>
+  </div>
+</div>
+
+<style>
+  :root {
+    --zourcefy-bg: rgba(15, 23, 42, 0.95);
+    --zourcefy-border: rgba(255, 255, 255, 0.1);
+    --zourcefy-text-primary: #f8fafc;
+    --zourcefy-text-secondary: #94a3b8;
+    --zourcefy-accent: #06b6d4;
+    --zourcefy-accent-glow: rgba(6, 182, 212, 0.4);
+    --zourcefy-success: #10b981;
+    --zourcefy-error: #ef4444;
+  }
+
+  .zourcefy-widget-hidden {
+    display: none !important;
+  }
+
+  .zourcefy-hidden {
+    display: none !important;
+  }
+
+  #zourcefy-group-buy-container {
+    margin: 24px 0;
+    max-width: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  .zourcefy-card {
+    background: var(--zourcefy-bg);
+    border: 1px solid var(--zourcefy-border);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(8px);
+    color: var(--zourcefy-text-primary);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .zourcefy-card:hover {
+    box-shadow: 0 12px 40px 0 rgba(6, 182, 212, 0.15);
+  }
+
+  .zourcefy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .zourcefy-badge {
+    background: rgba(6, 182, 212, 0.15);
+    border: 1px solid var(--zourcefy-accent);
+    color: var(--zourcefy-accent);
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    box-shadow: 0 0 10px var(--zourcefy-accent-glow);
+  }
+
+  .zourcefy-discount-tag {
+    font-size: 14px;
+    font-weight: 700;
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.1);
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+
+  .zourcefy-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 16px 0;
+    letter-spacing: -0.02em;
+    color: var(--zourcefy-text-primary);
+  }
+
+  .zourcefy-stats {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 16px;
+  }
+
+  .zourcefy-stat-item {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .zourcefy-label {
+    font-size: 12px;
+    color: var(--zourcefy-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+
+  .zourcefy-stat-item strong {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .zourcefy-progress-container {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 9999px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    position: relative;
+  }
+
+  .zourcefy-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%);
+    border-radius: 9999px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 8px var(--zourcefy-accent-glow);
+  }
+
+  .zourcefy-meta-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--zourcefy-text-secondary);
+    margin-bottom: 24px;
+  }
+
+  .zourcefy-cta-area {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 20px;
+  }
+
+  .zourcefy-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .zourcefy-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .zourcefy-input-label {
+    font-size: 13px;
+    color: var(--zourcefy-text-secondary);
+  }
+
+  .zourcefy-qty-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .zourcefy-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--zourcefy-text-primary);
+    padding: 12px 60px 12px 16px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .zourcefy-input:focus {
+    outline: none;
+    border-color: var(--zourcefy-accent);
+    box-shadow: 0 0 0 2px var(--zourcefy-accent-glow);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .zourcefy-qty-unit {
+    position: absolute;
+    right: 16px;
+    color: var(--zourcefy-text-secondary);
+    font-size: 14px;
+    pointer-events: none;
+    font-weight: 500;
+  }
+
+  .zourcefy-btn {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    color: #ffffff;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 14px rgba(6, 182, 212, 0.3);
+  }
+
+  .zourcefy-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+    background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+  }
+
+  .zourcefy-btn:active {
+    transform: translateY(1px);
+  }
+
+  .zourcefy-btn-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: none;
+    text-decoration: none;
+    text-align: center;
+  }
+
+  .zourcefy-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: none;
+  }
+
+  .zourcefy-guest-notice {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+
+  .zourcefy-guest-notice p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--zourcefy-text-secondary);
+    line-height: 1.5;
+  }
+
+  .zourcefy-message-box {
+    margin-top: 16px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .zourcefy-message-box.success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid var(--zourcefy-success);
+    color: var(--zourcefy-success);
+  }
+
+  .zourcefy-message-box.error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--zourcefy-error);
+    color: var(--zourcefy-error);
+  }
+
+  .btn-loader {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #white;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('zourcefy-group-buy-container');
+    if (!container) return;
+
+    const productId = container.getAttribute('data-product-id');
+    if (!productId) return;
+
+    // Elements
+    const titleEl = document.getElementById('zourcefy-product-title');
+    const discountEl = document.getElementById('zourcefy-discount-tag');
+    const currentQtyEl = document.getElementById('zourcefy-current-qty');
+    const targetQtyEl = document.getElementById('zourcefy-target-qty');
+    const progressBarEl = document.getElementById('zourcefy-progress-bar');
+    const memberCountEl = document.getElementById('zourcefy-member-count');
+    const statusTextEl = document.getElementById('zourcefy-status-text');
+    const ctaAreaEl = document.getElementById('zourcefy-cta-area');
+    const formEl = document.getElementById('zourcefy-join-form');
+    const submitBtnEl = document.getElementById('zourcefy-submit-btn');
+    const messageBoxEl = document.getElementById('zourcefy-message-box');
+
+    // Fetch active pool details via Shopify App Proxy
+    fetch(`/apps/zourcefy-pool?productId=${encodeURIComponent(productId)}`)
+      .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+      })
+      .then(data => {
+        if (!data || !data.hasPool) {
+          // If no active pool exists, keep widget hidden
+          return;
+        }
+
+        const pool = data.pool;
+        
+        // Show container
+        container.classList.remove('zourcefy-widget-hidden');
+        
+        // Update values
+        titleEl.textContent = pool.productTitle;
+        discountEl.textContent = `Unlocks ${pool.discountPercent}% Off`;
+        currentQtyEl.textContent = `${pool.currentQuantity} Tons`;
+        targetQtyEl.textContent = `${pool.targetQuantity} Tons`;
+        memberCountEl.textContent = `${pool.memberCount} ${pool.memberCount === 1 ? 'participant' : 'participants'} joined`;
+        
+        // Calculate progress percentage
+        const progressPercent = Math.min(100, Math.round((pool.currentQuantity / pool.targetQuantity) * 100));
+        progressBarEl.style.width = `${progressPercent}%`;
+        statusTextEl.textContent = `${progressPercent}% reached`;
+
+        // If pool is completed, hide CTA and show completion message
+        if (pool.status === 'COMPLETED') {
+          ctaAreaEl.innerHTML = `
+            <div class="zourcefy-message-box success" style="margin-top: 0;">
+              <strong>🎯 Pool Completed!</strong> The target of ${pool.targetQuantity} Tons has been met. The ${pool.discountPercent}% discount is unlocked for all participants!
+            </div>
+          `;
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching group buy pool details:', error);
+      });
+
+    // Handle Form Submit
+    if (formEl) {
+      formEl.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const btnText = submitBtnEl.querySelector('.btn-text');
+        const btnLoader = submitBtnEl.querySelector('.btn-loader');
+        
+        // Show loader state
+        submitBtnEl.disabled = true;
+        btnText.classList.add('zourcefy-hidden');
+        btnLoader.classList.remove('zourcefy-hidden');
+        
+        // Clear alerts
+        messageBoxEl.className = 'zourcefy-message-box zourcefy-hidden';
+        messageBoxEl.textContent = '';
+
+        const formData = new FormData(formEl);
+        const payload = {
+          productId: formData.get('productId'),
+          customerId: formData.get('customerId'),
+          customerEmail: formData.get('customerEmail'),
+          quantity: parseFloat(formData.get('quantity'))
+        };
+
+        fetch('/apps/zourcefy-pool', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+          // Restore button state
+          submitBtnEl.disabled = false;
+          btnText.classList.remove('zourcefy-hidden');
+          btnLoader.classList.add('zourcefy-hidden');
+
+          if (data.error) {
+            messageBoxEl.classList.remove('zourcefy-hidden');
+            messageBoxEl.classList.add('error');
+            messageBoxEl.textContent = data.error;
+          } else if (data.success) {
+            messageBoxEl.classList.remove('zourcefy-hidden');
+            messageBoxEl.classList.add('success');
+            
+            const p = data.pool;
+            const progressPercent = Math.min(100, Math.round((p.currentQuantity / p.targetQuantity) * 100));
+            
+            // Update widget stats
+            currentQtyEl.textContent = `${p.currentQuantity} Tons`;
+            progressBarEl.style.width = `${progressPercent}%`;
+            statusTextEl.textContent = `${progressPercent}% reached`;
+            memberCountEl.textContent = `${p.memberCount} ${p.memberCount === 1 ? 'participant' : 'participants'} joined`;
+
+            if (p.status === 'COMPLETED') {
+              messageBoxEl.innerHTML = `<strong>🎉 Success!</strong> You have successfully joined the pool. The target has been met and the discount is now unlocked!`;
+              // Reload page or update UI after a short delay
+              setTimeout(() => {
+                window.location.reload();
+              }, 2500);
+            } else {
+              messageBoxEl.innerHTML = `<strong>🎉 Success!</strong> You have successfully joined the pool with ${payload.quantity} Tons.`;
+              formEl.reset();
+            }
+          }
+        })
+        .catch(err => {
+          submitBtnEl.disabled = false;
+          btnText.classList.remove('zourcefy-hidden');
+          btnLoader.classList.add('zourcefy-hidden');
+          
+          messageBoxEl.classList.remove('zourcefy-hidden');
+          messageBoxEl.classList.add('error');
+          messageBoxEl.textContent = 'An unexpected error occurred. Please try again.';
+          console.error('Error joining group buy pool:', err);
+        });
+      });
+    }
+  });
+</script>
+
+{% schema %}
+{
+  "name": "Group Buy Pool",
+  "target": "section",
+  "settings": []
+}
+{% endschema %}

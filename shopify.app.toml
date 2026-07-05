@@ -50,3 +50,9 @@ required = true
 [metaobjects.app.example.fields.description]
 name = "Description"
 type = "multi_line_text_field"
+
+[app_proxy]
+url = "/api/proxy"
+subpath = "zourcefy-pool"
+prefix = "apps"
+
