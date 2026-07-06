@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zourcefy Group Buy — Procurement Pooling for Shopify</title>
+  <meta name="description" content="A premium Shopify application enabling group buying, procurement pooling, and automated quantity-based discounts.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-color: #030712;
+      --card-bg: rgba(17, 24, 39, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text-primary: #f9fafb;
+      --text-secondary: #9ca3af;
+      --primary: #38bdf8;
+      --primary-hover: #0ea5e9;
+      --accent: #a78bfa;
+      --accent-glow: rgba(167, 139, 250, 0.15);
+      --success: #34d399;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Ambient background glows */
+    .glow-orb {
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      filter: blur(120px);
+      z-index: -1;
+      opacity: 0.4;
+    }
+
+    .orb-1 {
+      top: -100px;
+      right: -50px;
+      background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+    }
+
+    .orb-2 {
+      bottom: -100px;
+      left: -100px;
+      background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+    }
+
+    /* Container */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    /* Navigation */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 80px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .logo {
+      font-family: 'Outfit', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.03em;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s ease;
+      margin-left: 24px;
+    }
+
+    .nav-links a:hover {
+      color: var(--primary);
+    }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      max-width: 800px;
+      margin: 0 auto 100px auto;
+      position: relative;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 24px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .hero-badge .dot {
+      width: 6px;
+      height: 6px;
+      background-color: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--success);
+      display: inline-block;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 56px;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 24px;
+      background: linear-gradient(to right, #ffffff 30%, #e2e8f0 70%, rgba(255,255,255,0.7) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto 40px auto;
+    }
+
+    .cta-group {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: #030712;
+      box-shadow: 0 4px 20px rgba(56, 189, 248, 0.25);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(56, 189, 248, 0.35);
+    }
+
+    .btn-secondary {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      border: 1px solid var(--card-border);
+    }
+
+    .btn-secondary:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Features Grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      margin-bottom: 100px;
+    }
+
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 32px;
+      backdrop-filter: blur(12px);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.05) 0%, transparent 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .feature-card:hover::before {
+      opacity: 1;
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      background: rgba(167, 139, 250, 0.1);
+      border: 1px solid rgba(167, 139, 250, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      color: var(--accent);
+    }
+
+    .feature-card:nth-child(2) .feature-icon {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      color: var(--primary);
+    }
+
+    .feature-card:nth-child(3) .feature-icon {
+      background: rgba(52, 211, 153, 0.1);
+      border: 1px solid rgba(52, 211, 153, 0.2);
+      color: var(--success);
+    }
+
+    .feature-card h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .feature-card p {
+      color: var(--text-secondary);
+      font-size: 15px;
+      font-weight: 400;
+    }
+
+    /* Technical details / Specs */
+    .specs-section {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 40px;
+      margin-bottom: 80px;
+      backdrop-filter: blur(12px);
+    }
+
+    .specs-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .specs-title::before {
+      content: '';
+      width: 4px;
+      height: 24px;
+      background: var(--primary);
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    .specs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px;
+    }
+
+    .spec-item h4 {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .spec-item p {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 40px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    footer p {
+      margin-bottom: 8px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 40px;
+      }
+      .cta-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .nav-links {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Orbs -->
+  <div class="glow-orb orb-1"></div>
+  <div class="glow-orb orb-2"></div>
+
+  <div class="container">
+    <!-- Header/Navigation -->
+    <nav>
+      <div class="logo">Zourcefy</div>
+      <div class="nav-links">
+        <a href="setup_guide.html">Setup Guide</a>
+        <a href="https://github.com/zourcefy-2026/zourcefy_app" target="_blank">Repository</a>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-badge">
+        <span class="dot"></span>
+        shopify-group-buy branch is active
+      </div>
+      <h1>Procurement Pooling &<br>Group Buy Solutions</h1>
+      <p class="hero-subtitle">
+        An advanced, production-ready Shopify App that enables buyers to pool their demand and reach wholesale price targets together. Built on modern React Router architecture.
+      </p>
+      <div class="cta-group">
+        <a href="setup_guide.html" class="btn btn-primary">Open Setup Guide</a>
+        <a href="https://github.com/zourcefy-2026/zourcefy_app" target="_blank" class="btn btn-secondary">Explore Codebase</a>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features-grid">
+      <!-- Feature 1 -->
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        </div>
+        <h3>Procurement Pooling</h3>
+        <p>Facilitates co-buying circles. Customers join pools to buy bulk orders, reaching tiered pricing goals organically.</p>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+        </div>
+        <h3>Vibrant Polaris Interface</h3>
+        <p>Tailored using Shopify's premium Polaris design system to deliver an integrated, cohesive experience for store merchants.</p>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 7v10c0 2.21 3.58 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.58 4 8 4s8-1.79 8-4M4 7c0-2.21 3.58-4 8-4s8 1.79 8 4M4 12c0 2.21 3.58 4 8 4s8-1.79 8-4"></path></svg>
+        </div>
+        <h3>Robust Backend Stack</h3>
+        <p>Powered by React Router v7, SQLite local database, and Prisma ORM for lightning-fast and reliable pool state tracking.</p>
+      </div>
+    </section>
+
+    <!-- Specs Section -->
+    <section class="specs-section">
+      <div class="specs-title">App Stack & Status</div>
+      <div class="specs-grid">
+        <div class="spec-item">
+          <h4>Framework</h4>
+          <p>React Router v7 + Vite</p>
+        </div>
+        <div class="spec-item">
+          <h4>Database</h4>
+          <p>Prisma / SQLite</p>
+        </div>
+        <div class="spec-item">
+          <h4>Theme Widget</h4>
+          <p>Liquid Theme Extension</p>
+        </div>
+        <div class="spec-item">
+          <h4>Active Branch</h4>
+          <p>shopify-group-buy</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <p>&copy; 2026 Zourcefy. All rights reserved.</p>
+      <p style="color: var(--text-secondary); opacity: 0.7;">Designed with high aesthetic precision.</p>
+    </footer>
+  </div>
+
+</body>
+</html>
