@@ -1,5 +1,4 @@
-import { data, redirect, useNavigate } from "react-router";
-import { useActionData, useNavigation, Form } from "react-router";
+import { data, redirect, useNavigate, useActionData, useNavigation, Form } from "react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   Page,
@@ -12,6 +11,7 @@ import {
   Text,
 } from "@shopify/polaris";
 import { useState } from "react";
+import { useAppBridge } from "@shopify/app-bridge-react";
 import { createPool } from "../pools.server";
 import { authenticate } from "../shopify.server";
 
@@ -48,11 +48,30 @@ export default function NewPool() {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
   const navigate = useNavigate();
+  const shopify = useAppBridge();
 
   const [productId, setProductId] = useState("");
   const [productTitle, setProductTitle] = useState("");
   const [targetQuantity, setTargetQuantity] = useState("");
   const [discountPercent, setDiscountPercent] = useState("");
+
+  const selectProduct = async () => {
+    try {
+      const selected = await shopify.resourcePicker({
+        type: "product",
+        multiple: false,
+      });
+
+      if (selected && selected.length > 0) {
+        const product = selected[0];
+        const cleanId = product.id.split("/").pop() || product.id;
+        setProductId(cleanId);
+        setProductTitle(product.title);
+      }
+    } catch (err) {
+      console.error("Error selecting product:", err);
+    }
+  };
 
   return (
     <Page
@@ -70,12 +89,15 @@ export default function NewPool() {
               )}
               <Form method="post">
                 <FormLayout>
+                  <Button onClick={selectProduct} variant="secondary">
+                    Select Product from Catalog
+                  </Button>
                   <TextField
                     label="Product ID"
                     name="productId"
                     value={productId}
                     onChange={setProductId}
-                    placeholder="e.g. steel-grade-x"
+                    placeholder="Click button above to select product, or paste ID"
                     autoComplete="off"
                   />
                   <TextField
@@ -83,7 +105,7 @@ export default function NewPool() {
                     name="productTitle"
                     value={productTitle}
                     onChange={setProductTitle}
-                    placeholder="e.g. Aerospace Steel Grade X"
+                    placeholder="Product Title"
                     autoComplete="off"
                   />
                   <TextField
@@ -116,3 +138,4 @@ export default function NewPool() {
     </Page>
   );
 }
+
