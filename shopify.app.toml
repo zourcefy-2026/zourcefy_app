@@ -2,7 +2,7 @@
 
 client_id = "c9039881c370b1229eaafba1f3d6c4b8"
 name = "zourcefy-group-buy "
-application_url = "https://example.com"
+application_url = "https://zourcefyapp-production.up.railway.app"
 embedded = true
 
 [build]
@@ -25,7 +25,7 @@ api_version = "2026-07"
 scopes = "write_products,write_metaobjects,write_metaobject_definitions"
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [ "https://zourcefyapp-production.up.railway.app/api/auth" ]
 
 [product.metafields.app.demo_info]
 type = "single_line_text_field"
