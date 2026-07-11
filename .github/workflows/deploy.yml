@@ -60,4 +60,5 @@ jobs:
       - name: Deploy Shopify App & Extensions
         env:
           SHOPIFY_CLI_PARTNERS_TOKEN: ${{ secrets.SHOPIFY_CLI_PARTNERS_TOKEN }}
+          SHOPIFY_APP_AUTOMATION_TOKEN: ${{ secrets.SHOPIFY_APP_AUTOMATION_TOKEN || secrets.SHOPIFY_CLI_PARTNERS_TOKEN }}
         run: npm run deploy -- --allow-updates
