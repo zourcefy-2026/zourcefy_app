@@ -13,6 +13,8 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 COPY . .
 
+RUN mkdir -p /app/data
+
 RUN npm run build
 
 CMD ["npm", "run", "docker-start"]

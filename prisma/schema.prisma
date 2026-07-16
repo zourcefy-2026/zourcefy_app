@@ -5,16 +5,14 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
-// enough when changing adapters.
-// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
+// MongoDB does not support migrations — use `prisma db push` instead
 datasource db {
-  provider = "sqlite"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 model Session {
-  id            String    @id
+  id            String    @id @map("_id")
   shop          String
   state         String
   isOnline      Boolean   @default(false)
@@ -32,8 +30,9 @@ model Session {
   refreshToken        String?
   refreshTokenExpires DateTime?
 }
+
 model Pool {
-  id              String       @id @default(cuid())
+  id              String       @id @default(auto()) @map("_id") @db.ObjectId
   productId       String
   productTitle    String
   currentQuantity Float        @default(0)
@@ -47,11 +46,11 @@ model Pool {
 }
 
 model PoolMember {
-  id         String   @id @default(cuid())
-  poolId     String
-  pool       Pool     @relation(fields: [poolId], references: [id])
-  customerId String
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  poolId        String   @db.ObjectId
+  pool          Pool     @relation(fields: [poolId], references: [id])
+  customerId    String
   customerEmail String
-  quantity   Float
-  joinedAt   DateTime @default(now())
+  quantity      Float
+  joinedAt      DateTime @default(now())
 }
