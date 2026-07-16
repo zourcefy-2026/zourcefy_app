@@ -7,12 +7,12 @@ generator client {
 
 // MongoDB does not support migrations — use `prisma db push` instead
 datasource db {
-  provider = "mongodb"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model Session {
-  id            String    @id @map("_id")
+  id            String    @id
   shop          String
   state         String
   isOnline      Boolean   @default(false)
@@ -32,7 +32,7 @@ model Session {
 }
 
 model Pool {
-  id              String       @id @default(auto()) @map("_id") @db.ObjectId
+  id              String       @id @default(cuid())
   productId       String
   productTitle    String
   currentQuantity Float        @default(0)
@@ -46,8 +46,8 @@ model Pool {
 }
 
 model PoolMember {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  poolId        String   @db.ObjectId
+  id            String   @id @default(cuid())
+  poolId        String
   pool          Pool     @relation(fields: [poolId], references: [id])
   customerId    String
   customerEmail String
