@@ -7,7 +7,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "file:./dev.sqlite"
 }
 
 model Session {
@@ -26,19 +26,17 @@ model Session {
   locale        String?
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
-  refreshToken        String?
-  refreshTokenExpires DateTime?
 }
 
 model Pool {
   id                String       @id @default(cuid())
   productId         String
   productTitle      String
-  currentQuantity   Float        @default(0)
   targetQuantity    Float
+  currentQuantity   Float        @default(0)
   discountPercent   Float        @default(0)
-  status            String       @default("PENDING")
-  createdBy         String       @default("CUSTOMER")
+  status            String       @default("PENDING") // PENDING, ACTIVE, COMPLETED, EXPIRED, REJECTED
+  createdBy         String       @default("ADMIN") // ADMIN, CUSTOMER
   creatorEmail      String?
   creatorCustomerId String?
   deadline          DateTime?
