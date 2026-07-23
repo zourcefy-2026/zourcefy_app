@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -31,23 +31,37 @@ model Session {
 }
 
 model Pool {
-  id              String       @id @default(cuid())
-  productId       String
-  productTitle    String
-  currentQuantity Float        @default(0)
+  id                String       @id @default(cuid())
+  productId         String
+  productTitle      String
+  currentQuantity   Float        @default(0)
+  targetQuantity    Float
+  discountPercent   Float        @default(0)
+  status            String       @default("PENDING")
+  createdBy         String       @default("CUSTOMER")
+  creatorEmail      String?
+  creatorCustomerId String?
+  deadline          DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  members           PoolMember[]
+  tiers             PoolTier[]
+}
+
+model PoolTier {
+  id              String   @id @default(cuid())
+  poolId          String
+  pool            Pool     @relation(fields: [poolId], references: [id], onDelete: Cascade)
   targetQuantity  Float
   discountPercent Float
-  status          String       @default("ACTIVE")
-  deadline        DateTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  members         PoolMember[]
+  tierOrder       Int      @default(1)
+  createdAt       DateTime @default(now())
 }
 
 model PoolMember {
   id            String   @id @default(cuid())
   poolId        String
-  pool          Pool     @relation(fields: [poolId], references: [id])
+  pool          Pool     @relation(fields: [poolId], references: [id], onDelete: Cascade)
   customerId    String
   customerEmail String
   quantity      Float

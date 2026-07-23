@@ -2,7 +2,7 @@
   <div class="zourcefy-card">
     
     <!-- ACTIVE POOL CONTAINER -->
-    <div id="zourcefy-active-state">
+    <div id="zourcefy-active-state" class="zourcefy-hidden">
       <!-- Header -->
       <div class="zourcefy-header">
         <div class="zourcefy-badge-wrapper">
@@ -18,11 +18,11 @@
       <div class="zourcefy-stats">
         <div class="zourcefy-stat-item">
           <span class="zourcefy-label">Current Volume</span>
-          <strong id="zourcefy-current-qty">0 Tons</strong>
+          <strong id="zourcefy-current-qty">0 Units</strong>
         </div>
         <div class="zourcefy-stat-item">
           <span class="zourcefy-label">Target Volume</span>
-          <strong id="zourcefy-target-qty">0 Tons</strong>
+          <strong id="zourcefy-target-qty">0 Units</strong>
         </div>
       </div>
 
@@ -30,7 +30,13 @@
         <div id="zourcefy-progress-bar" class="zourcefy-progress-bar" style="width: 0%;"></div>
       </div>
 
-      <div class="zourcefy-meta-info">
+      <!-- Multi-tier Breakdown -->
+      <div id="zourcefy-tiers-wrapper" class="zourcefy-tiers-wrapper zourcefy-hidden">
+        <span class="zourcefy-label">Discount Tiers</span>
+        <div id="zourcefy-tiers-list" class="zourcefy-tiers-list"></div>
+      </div>
+
+      <div class="zourcefy-meta-info" style="margin-top: 12px;">
         <span id="zourcefy-member-count" class="zourcefy-members">0 participants joined</span>
         <span id="zourcefy-status-text" class="zourcefy-status-text">--% reached</span>
       </div>
@@ -59,7 +65,7 @@
           {% endif %}
           
           <div class="zourcefy-input-group">
-            <label for="zourcefy-qty-input" class="zourcefy-input-label">Volume to Commit (Tons):</label>
+            <label for="zourcefy-qty-input" class="zourcefy-input-label">Volume to Commit:</label>
             <div class="zourcefy-qty-wrapper">
               <input 
                 id="zourcefy-qty-input" 
@@ -71,7 +77,7 @@
                 required 
                 class="zourcefy-input"
               >
-              <span class="zourcefy-qty-unit">Tons</span>
+              <span class="zourcefy-qty-unit">Units</span>
             </div>
           </div>
 
@@ -83,9 +89,24 @@
       </div>
     </div>
 
-    <!-- CREATE POOL CONTAINER -->
+    <!-- CREATOR PENDING CONTAINER (Visible only to creator while pending approval) -->
+    <div id="zourcefy-pending-state" class="zourcefy-hidden">
+      <div class="zourcefy-header">
+        <div class="zourcefy-badge-wrapper">
+          <span class="zourcefy-badge" style="border-color: #f59e0b; color: #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);">Pending Approval</span>
+        </div>
+      </div>
+      <h3 class="zourcefy-title">Your Pool Request is Under Review</h3>
+      <p style="color: var(--zourcefy-text-secondary); font-size: 14px; margin-top: -8px; margin-bottom: 16px; line-height: 1.5;">
+        Your group buy pool request for this product has been submitted. The store owner is setting custom volume discount tiers and will activate it shortly!
+      </p>
+      <div id="zourcefy-pending-details" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 16px; font-size: 13px; color: var(--zourcefy-text-secondary);">
+        Status: <strong style="color: #f59e0b;">Awaiting Admin Approval</strong>
+      </div>
+    </div>
+
+    <!-- CREATE POOL CONTAINER (Visible to everyone when no pool exists) -->
     <div id="zourcefy-create-state" class="zourcefy-hidden">
-      <!-- Header -->
       <div class="zourcefy-header">
         <div class="zourcefy-badge-wrapper">
           <span class="zourcefy-badge" style="border-color: #f59e0b; color: #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);">Group Buy Available</span>
@@ -94,7 +115,7 @@
 
       <h3 class="zourcefy-title">Start a Group Buy Pool</h3>
       <p style="color: var(--zourcefy-text-secondary); font-size: 14px; margin-top: -10px; margin-bottom: 20px;">
-        Be the first to commit volume for this product and invite others to unlock wholesale discounts!
+        Be the first to commit volume for this product and request custom wholesale volume discounts!
       </p>
 
       <a 
@@ -103,7 +124,7 @@
         class="zourcefy-btn" 
         style="text-decoration: none; text-align: center; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);"
       >
-        Start Group Buy
+        Request Group Buy
       </a>
     </div>
 
@@ -147,10 +168,6 @@
     backdrop-filter: blur(8px);
     color: var(--zourcefy-text-primary);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-
-  .zourcefy-card:hover {
-    box-shadow: 0 12px 40px 0 rgba(6, 182, 212, 0.15);
   }
 
   .zourcefy-header {
@@ -232,6 +249,35 @@
     box-shadow: 0 0 8px var(--zourcefy-accent-glow);
   }
 
+  .zourcefy-tiers-wrapper {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .zourcefy-tiers-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .zourcefy-tier-chip {
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    font-size: 12px;
+    color: var(--zourcefy-text-secondary);
+  }
+
+  .zourcefy-tier-chip.unlocked {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: #10b981;
+    color: #10b981;
+    font-weight: 600;
+  }
+
   .zourcefy-meta-info {
     display: flex;
     justify-content: space-between;
@@ -280,13 +326,6 @@
     transition: all 0.3s ease;
   }
 
-  .zourcefy-input:focus {
-    outline: none;
-    border-color: var(--zourcefy-accent);
-    box-shadow: 0 0 0 2px var(--zourcefy-accent-glow);
-    background: rgba(255, 255, 255, 0.08);
-  }
-
   .zourcefy-qty-unit {
     position: absolute;
     right: 16px;
@@ -318,45 +357,12 @@
     background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
   }
 
-  .zourcefy-btn:active {
-    transform: translateY(1px);
-  }
-
-  .zourcefy-btn-secondary {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: none;
-    text-decoration: none;
-    text-align: center;
-  }
-
-  .zourcefy-btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.25);
-    box-shadow: none;
-  }
-
-  .zourcefy-guest-notice {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    text-align: center;
-  }
-
-  .zourcefy-guest-notice p {
-    margin: 0;
-    font-size: 14px;
-    color: var(--zourcefy-text-secondary);
-    line-height: 1.5;
-  }
-
   .zourcefy-message-box {
     margin-top: 16px;
     padding: 12px 16px;
     border-radius: 8px;
     font-size: 14px;
     line-height: 1.4;
-    animation: fadeIn 0.3s ease;
   }
 
   .zourcefy-message-box.success {
@@ -376,17 +382,12 @@
     height: 20px;
     border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
-    border-top-color: #white;
+    border-top-color: white;
     animation: spin 0.8s linear infinite;
   }
 
   @keyframes spin {
     to { transform: rotate(360deg); }
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
   }
 </style>
 
@@ -398,9 +399,10 @@
     const productId = container.getAttribute('data-product-id');
     if (!productId) return;
 
-    // Elements
     const activeStateEl = document.getElementById('zourcefy-active-state');
+    const pendingStateEl = document.getElementById('zourcefy-pending-state');
     const createStateEl = document.getElementById('zourcefy-create-state');
+    
     const titleEl = document.getElementById('zourcefy-product-title');
     const discountEl = document.getElementById('zourcefy-discount-tag');
     const currentQtyEl = document.getElementById('zourcefy-current-qty');
@@ -408,80 +410,106 @@
     const progressBarEl = document.getElementById('zourcefy-progress-bar');
     const memberCountEl = document.getElementById('zourcefy-member-count');
     const statusTextEl = document.getElementById('zourcefy-status-text');
+    const tiersWrapperEl = document.getElementById('zourcefy-tiers-wrapper');
+    const tiersListEl = document.getElementById('zourcefy-tiers-list');
+    
     const ctaAreaEl = document.getElementById('zourcefy-cta-area');
     const formEl = document.getElementById('zourcefy-join-form');
     const submitBtnEl = document.getElementById('zourcefy-submit-btn');
     const messageBoxEl = document.getElementById('zourcefy-message-box');
 
-    // Generate guest customer ID if not logged in
-    const joinCustIdEl = document.getElementById('zourcefy-join-customer-id');
-    const randomGuestId = 'guest_' + Math.random().toString(36).substring(2, 15);
-    if (joinCustIdEl) joinCustIdEl.value = randomGuestId;
+    // Customer details context
+    let customerEmail = "{% if customer %}{{ customer.email }}{% endif %}";
+    let customerId = "{% if customer %}{{ customer.id }}{% endif %}";
 
-    // Fetch active pool details via Shopify App Proxy
-    fetch(`/apps/zourcefy-pool?productId=${encodeURIComponent(productId)}`)
-      .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.json();
-      })
+    if (!customerEmail) {
+      customerEmail = localStorage.getItem('zourcefy_guest_email') || '';
+    }
+
+    const joinCustIdEl = document.getElementById('zourcefy-join-customer-id');
+    if (joinCustIdEl && !customerId) {
+      joinCustIdEl.value = 'guest_' + Math.random().toString(36).substring(2, 15);
+    }
+
+    // Build URL params
+    const queryParams = new URLSearchParams({ productId: productId });
+    if (customerEmail) queryParams.append('customerEmail', customerEmail);
+    if (customerId) queryParams.append('customerId', customerId);
+
+    fetch(`/apps/zourcefy-pool?${queryParams.toString()}`)
+      .then(response => response.json())
       .then(data => {
-        // Show container
         container.classList.remove('zourcefy-widget-hidden');
 
-        if (!data || !data.hasPool) {
-          // If no active pool exists, show creation form
+        // Check Creator-Pending State
+        if (data.isCreatorPending && data.pendingPool) {
           activeStateEl.classList.add('zourcefy-hidden');
+          createStateEl.classList.add('zourcefy-hidden');
+          pendingStateEl.classList.remove('zourcefy-hidden');
+          return;
+        }
+
+        // Check if Active Pool Exists
+        if (!data || !data.hasActivePool || !data.pool) {
+          activeStateEl.classList.add('zourcefy-hidden');
+          pendingStateEl.classList.add('zourcefy-hidden');
           createStateEl.classList.remove('zourcefy-hidden');
           return;
         }
 
         const pool = data.pool;
-        
-        // Show active state, hide create state
+
+        // Show active state
         activeStateEl.classList.remove('zourcefy-hidden');
+        pendingStateEl.classList.add('zourcefy-hidden');
         createStateEl.classList.add('zourcefy-hidden');
-        
-        // Update values
+
         titleEl.textContent = pool.productTitle;
         discountEl.textContent = `Unlocks ${pool.discountPercent}% Off`;
-        currentQtyEl.textContent = `${pool.currentQuantity} Tons`;
-        targetQtyEl.textContent = `${pool.targetQuantity} Tons`;
+        currentQtyEl.textContent = `${pool.currentQuantity} Units`;
+        targetQtyEl.textContent = `${pool.targetQuantity} Units`;
         memberCountEl.textContent = `${pool.memberCount} ${pool.memberCount === 1 ? 'participant' : 'participants'} joined`;
-        
-        // Calculate progress percentage
+
         const progressPercent = Math.min(100, Math.round((pool.currentQuantity / pool.targetQuantity) * 100));
         progressBarEl.style.width = `${progressPercent}%`;
         statusTextEl.textContent = `${progressPercent}% reached`;
 
-        // If pool is completed, hide CTA and show completion message
+        // Render tiers if available
+        if (pool.tiers && pool.tiers.length > 0) {
+          tiersWrapperEl.classList.remove('zourcefy-hidden');
+          tiersListEl.innerHTML = pool.tiers.map(t => {
+            const isUnlocked = pool.currentQuantity >= t.targetQuantity;
+            return `<div class="zourcefy-tier-chip ${isUnlocked ? 'unlocked' : ''}">
+              ${t.targetQuantity} Units: <strong>${t.discountPercent}% OFF</strong> ${isUnlocked ? '✓' : ''}
+            </div>`;
+          }).join('');
+        }
+
         if (pool.status === 'COMPLETED') {
           ctaAreaEl.innerHTML = `
             <div class="zourcefy-message-box success" style="margin-top: 0;">
-              <strong>🎯 Pool Completed!</strong> The target of ${pool.targetQuantity} Tons has been met. The ${pool.discountPercent}% discount is unlocked for all participants!
+              <strong>🎯 Pool Completed!</strong> The target of ${pool.targetQuantity} Units has been reached. The wholesale discount is unlocked!
             </div>
           `;
         }
       })
-      .catch(error => {
-        console.error('Error fetching group buy pool details:', error);
+      .catch(err => {
+        console.error('Error fetching group buy pool:', err);
       });
 
-    // Handle Join Form Submit
+    // Form submission handler
     if (formEl) {
       formEl.addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         const btnText = submitBtnEl.querySelector('.btn-text');
         const btnLoader = submitBtnEl.querySelector('.btn-loader');
-        
-        // Show loader state
+
         submitBtnEl.disabled = true;
         btnText.classList.add('zourcefy-hidden');
         btnLoader.classList.remove('zourcefy-hidden');
-        
-        // Clear alerts
+
         messageBoxEl.className = 'zourcefy-message-box zourcefy-hidden';
-        messageBoxEl.textContent = '';
 
         const formData = new FormData(formEl);
         const payload = {
@@ -491,62 +519,39 @@
           quantity: parseFloat(formData.get('quantity'))
         };
 
+        if (payload.customerEmail) {
+          localStorage.setItem('zourcefy_guest_email', payload.customerEmail);
+        }
+
         fetch('/apps/zourcefy-pool', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         })
-        .then(response => response.json())
+        .then(res => res.json())
         .then(data => {
-          // Restore button state
           submitBtnEl.disabled = false;
           btnText.classList.remove('zourcefy-hidden');
           btnLoader.classList.add('zourcefy-hidden');
 
           if (data.error) {
-            messageBoxEl.classList.remove('zourcefy-hidden');
             messageBoxEl.className = 'zourcefy-message-box error';
             messageBoxEl.textContent = data.error;
           } else if (data.success) {
-            messageBoxEl.classList.remove('zourcefy-hidden');
             messageBoxEl.className = 'zourcefy-message-box success';
-            
-            const p = data.pool;
-            const progressPercent = Math.min(100, Math.round((p.currentQuantity / p.targetQuantity) * 100));
-            
-            // Update widget stats
-            currentQtyEl.textContent = `${p.currentQuantity} Tons`;
-            progressBarEl.style.width = `${progressPercent}%`;
-            statusTextEl.textContent = `${progressPercent}% reached`;
-            memberCountEl.textContent = `${p.memberCount} ${p.memberCount === 1 ? 'participant' : 'participants'} joined`;
-
-            if (p.status === 'COMPLETED') {
-              messageBoxEl.innerHTML = `<strong>🎉 Success!</strong> You have successfully joined the pool. The target has been met and the discount is now unlocked!`;
-              // Reload page or update UI after a short delay
-              setTimeout(() => {
-                window.location.reload();
-              }, 2500);
-            } else {
-              messageBoxEl.innerHTML = `<strong>🎉 Success!</strong> You have successfully joined the pool with ${payload.quantity} Tons.`;
-              formEl.reset();
-            }
+            messageBoxEl.innerHTML = `<strong>🎉 Joined Pool!</strong> Successfully committed ${payload.quantity} Units.`;
+            setTimeout(() => { window.location.reload(); }, 1800);
           }
         })
         .catch(err => {
           submitBtnEl.disabled = false;
           btnText.classList.remove('zourcefy-hidden');
           btnLoader.classList.add('zourcefy-hidden');
-          
-          messageBoxEl.classList.remove('zourcefy-hidden');
           messageBoxEl.className = 'zourcefy-message-box error';
-          messageBoxEl.textContent = 'An unexpected error occurred. Please try again.';
-          console.error('Error joining group buy pool:', err);
+          messageBoxEl.textContent = 'An unexpected error occurred.';
         });
       });
     }
-
   });
 </script>
 
@@ -554,13 +559,6 @@
 {
   "name": "Group Buy Pool",
   "target": "section",
-  "settings": [
-    {
-      "type": "text",
-      "id": "redirect_url",
-      "label": "Pool Creation Redirect URL",
-      "default": "https://example.com/create-pool"
-    }
-  ]
+  "settings": []
 }
 {% endschema %}

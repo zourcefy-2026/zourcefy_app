@@ -7,7 +7,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
     await authenticate.public.appProxy(request);
-    
+
     const url = new URL(request.url);
 
     // Serve the integrated pool creation tab/page
@@ -18,9 +18,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
       const html = `
         <div style="max-width: 600px; margin: 40px auto; padding: 32px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); color: #f8fafc; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-          <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 8px; color: #fbbf24;">Start Group Buy Pool</h2>
-          <p style="font-size: 14px; color: #94a3b8; margin-bottom: 24px;">Complete the details below to start a volume procurement pool for <strong>${productTitle}</strong>.</p>
-          
+          <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 8px; color: #fbbf24;">Request Group Buy Pool</h2>
+          <p style="font-size: 14px; color: #94a3b8; margin-bottom: 24px;">Submit a group procurement request for <strong>${productTitle}</strong>. The store owner will configure bulk discount tiers upon approval.</p>
+
           <form id="create-pool-form" method="POST" action="/apps/zourcefy-pool" style="display: flex; flex-direction: column; gap: 20px;">
             <input type="hidden" name="action" value="create">
             <input type="hidden" name="productId" value="${productId}">
@@ -35,41 +35,45 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
               <div style="display: flex; flex-direction: column; gap: 6px;">
-                <label style="font-size: 13px; color: #94a3b8; font-weight: 500;">Target Volume (Tons)</label>
+                <label style="font-size: 13px; color: #94a3b8; font-weight: 500;">Target Volume (Units/Tons)</label>
                 <input type="number" name="targetQuantity" min="1" placeholder="e.g. 50" required style="padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #f8fafc; font-size: 15px; outline: none;" />
               </div>
               <div style="display: flex; flex-direction: column; gap: 6px;">
-                <label style="font-size: 13px; color: #94a3b8; font-weight: 500;">Target Discount (%)</label>
-                <input type="number" name="discountPercent" min="1" max="100" placeholder="e.g. 15" required style="padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #f8fafc; font-size: 15px; outline: none;" />
+                <label style="font-size: 13px; color: #94a3b8; font-weight: 500;">Your Initial Commitment</label>
+                <input type="number" name="quantity" min="0.1" step="0.1" value="5" required style="padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #f8fafc; font-size: 15px; outline: none;" />
               </div>
             </div>
 
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-              <label style="font-size: 13px; color: #94a3b8; font-weight: 500;">Your Initial Commitment (Tons)</label>
-              <input type="number" name="quantity" min="0.1" step="0.1" value="5" required style="padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #f8fafc; font-size: 15px; outline: none;" />
-            </div>
-
             <button type="submit" style="padding: 14px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; border-radius: 8px; color: white; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3); transition: transform 0.2s; margin-top: 10px;">
-              Start & Join Group Buy
+              Submit Pool Request
             </button>
             <a href="/products/${productHandle}" style="text-align: center; color: #94a3b8; font-size: 14px; text-decoration: none; margin-top: 8px;">Cancel and return</a>
           </form>
         </div>
 
         <script>
-          // Dynamically associate customer details from Shopify liquid context
           const customerId = "{{ customer.id }}";
           const customerEmail = "{{ customer.email }}";
+          const emailInput = document.querySelector('input[name="customerEmail"]');
+          const custIdInput = document.getElementById('customer-id');
+
           if (customerId) {
-            document.getElementById('customer-id').value = customerId;
-            const emailInput = document.querySelector('input[name="customerEmail"]');
+            custIdInput.value = customerId;
             if (emailInput) {
               emailInput.value = customerEmail;
               emailInput.readOnly = true;
             }
           } else {
-            document.getElementById('customer-id').value = 'guest_' + Math.random().toString(36).substring(2, 15);
+            const savedEmail = localStorage.getItem('zourcefy_guest_email') || '';
+            if (emailInput && savedEmail) emailInput.value = savedEmail;
+            custIdInput.value = 'guest_' + Math.random().toString(36).substring(2, 15);
           }
+
+          document.getElementById('create-pool-form').addEventListener('submit', function() {
+            if (emailInput && emailInput.value) {
+              localStorage.setItem('zourcefy_guest_email', emailInput.value);
+            }
+          });
         </script>
       `;
 
@@ -81,6 +85,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
 
     const productId = url.searchParams.get("productId");
+    const requesterEmail = url.searchParams.get("customerEmail") || undefined;
+    const requesterCustomerId = url.searchParams.get("customerId") || undefined;
 
     if (!productId) {
       return data({ error: "productId is required" }, { status: 400 });
@@ -90,29 +96,43 @@ export async function loader({ request }: LoaderFunctionArgs) {
       ? productId.split("/").pop()!
       : productId;
 
-    // Search for pool matching either format
-    let pool = await getPoolByProduct(cleanProductId);
-    if (!pool && cleanProductId !== productId) {
-      pool = await getPoolByProduct(productId);
+    let poolData = await getPoolByProduct(cleanProductId, requesterEmail, requesterCustomerId);
+    if (!poolData.activePool && !poolData.pendingPool && cleanProductId !== productId) {
+      poolData = await getPoolByProduct(productId, requesterEmail, requesterCustomerId);
     }
 
-    if (!pool) {
-      return data({ hasPool: false });
+    const { activePool, pendingPool, isCreatorPending } = poolData;
+
+    if (!activePool && !isCreatorPending) {
+      return data({ hasPool: false, hasActivePool: false, isCreatorPending: false });
     }
 
     return data({
       hasPool: true,
-      pool: {
-        id: pool.id,
-        productId: pool.productId,
-        productTitle: pool.productTitle,
-        currentQuantity: pool.currentQuantity,
-        targetQuantity: pool.targetQuantity,
-        discountPercent: pool.discountPercent,
-        status: pool.status,
-        deadline: pool.deadline,
-        memberCount: pool.members.length,
-      },
+      hasActivePool: !!activePool,
+      isCreatorPending,
+      pool: activePool
+        ? {
+            id: activePool.id,
+            productId: activePool.productId,
+            productTitle: activePool.productTitle,
+            currentQuantity: activePool.currentQuantity,
+            targetQuantity: activePool.targetQuantity,
+            discountPercent: activePool.discountPercent,
+            status: activePool.status,
+            deadline: activePool.deadline,
+            memberCount: activePool.members.length,
+            tiers: activePool.tiers,
+          }
+        : null,
+      pendingPool: pendingPool
+        ? {
+            id: pendingPool.id,
+            targetQuantity: pendingPool.targetQuantity,
+            currentQuantity: pendingPool.currentQuantity,
+            createdAt: pendingPool.createdAt,
+          }
+        : null,
     });
   } catch (error: unknown) {
     console.error("Error in app proxy loader:", error);
@@ -140,18 +160,26 @@ export async function action({ request }: ActionFunctionArgs) {
         productId: formData.get("productId") as string,
         productTitle: formData.get("productTitle") as string,
         productHandle: formData.get("productHandle") as string,
-        targetQuantity: formData.get("targetQuantity") ? parseFloat(formData.get("targetQuantity") as string) : undefined,
-        discountPercent: formData.get("discountPercent") ? parseFloat(formData.get("discountPercent") as string) : undefined,
+        targetQuantity: formData.get("targetQuantity")
+          ? parseFloat(formData.get("targetQuantity") as string)
+          : undefined,
         customerId: formData.get("customerId") as string,
         customerEmail: formData.get("customerEmail") as string,
-        quantity: formData.get("quantity") ? parseFloat(formData.get("quantity") as string) : undefined,
+        quantity: formData.get("quantity")
+          ? parseFloat(formData.get("quantity") as string)
+          : undefined,
       };
     }
 
     const actionType = body.action || "join";
-    const { productId, customerId, customerEmail, quantity } = body;
+    const { productId, customerEmail, quantity } = body;
 
-    if (!productId || !customerId || !customerEmail || !quantity || isNaN(quantity)) {
+    const effectiveCustomerId =
+      body.customerId && body.customerId.trim() !== ""
+        ? body.customerId
+        : "guest_" + Math.random().toString(36).substring(2, 15);
+
+    if (!productId || !customerEmail || !quantity || isNaN(quantity)) {
       return data({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -159,20 +187,19 @@ export async function action({ request }: ActionFunctionArgs) {
       ? productId.split("/").pop()!
       : productId;
 
-    // 1. Handle Pool Creation Flow
+    // 1. Handle Pool Creation Flow (Customer Requested)
     if (actionType === "create") {
-      const { productTitle, targetQuantity, discountPercent, productHandle } = body;
+      const { productTitle, targetQuantity, productHandle } = body;
 
-      if (!productTitle || !targetQuantity || isNaN(targetQuantity) || !discountPercent || isNaN(discountPercent)) {
-        return data({ error: "Missing required fields for starting a group buy pool" }, { status: 400 });
+      if (!productTitle || !targetQuantity || isNaN(targetQuantity)) {
+        return data(
+          { error: "Missing required target quantity for group buy pool" },
+          { status: 400 }
+        );
       }
 
       if (targetQuantity <= 0) {
         return data({ error: "Target volume must be greater than zero" }, { status: 400 });
-      }
-
-      if (discountPercent <= 0 || discountPercent > 100) {
-        return data({ error: "Discount percentage must be between 1 and 100" }, { status: 400 });
       }
 
       if (quantity <= 0) {
@@ -183,63 +210,73 @@ export async function action({ request }: ActionFunctionArgs) {
         return data({ error: "Your initial commitment cannot exceed the target volume" }, { status: 400 });
       }
 
-      // Check if an active pool already exists
-      let existingPool = await getPoolByProduct(cleanProductId);
-      if (!existingPool && cleanProductId !== productId) {
-        existingPool = await getPoolByProduct(productId);
+      // Check if an active or pending pool already exists for this product
+      const existing = await getPoolByProduct(cleanProductId, customerEmail, effectiveCustomerId);
+      if (existing.activePool) {
+        return data(
+          { error: "An active group buy pool already exists for this product" },
+          { status: 400 }
+        );
+      }
+      if (existing.pendingPool) {
+        return data(
+          { error: "You already have a pool request pending approval for this product" },
+          { status: 400 }
+        );
       }
 
-      if (existingPool) {
-        return data({ error: "An active group buy pool already exists for this product" }, { status: 400 });
-      }
-
-      // Create pool and join creator
+      // Create pool in PENDING status without discount (Admin will assign discount tiers upon approval)
       const newPool = await createPool({
         productId: cleanProductId,
         productTitle,
         targetQuantity,
-        discountPercent,
+        discountPercent: 0,
+        status: "PENDING",
+        createdBy: "CUSTOMER",
+        creatorEmail: customerEmail,
+        creatorCustomerId: effectiveCustomerId,
       });
 
+      // Join creator to pool
       await joinPool({
         poolId: newPool.id,
-        customerId,
+        customerId: effectiveCustomerId,
         customerEmail,
         quantity,
       });
 
       // Redirect back if standard browser HTML form submission
       const acceptHeader = request.headers.get("Accept") || "";
-      const isHtmlRequest = acceptHeader.includes("text/html") || !request.headers.get("X-Requested-With");
+      const isHtmlRequest =
+        acceptHeader.includes("text/html") || !request.headers.get("X-Requested-With");
       if (isHtmlRequest && productHandle) {
         return redirect(`/products/${productHandle}`);
       }
 
       return data({
         success: true,
+        isPending: true,
+        message: "Your Group Buy Pool request has been submitted for store approval.",
         pool: {
           id: newPool.id,
           currentQuantity: quantity,
           targetQuantity,
-          status: "ACTIVE",
+          status: "PENDING",
           memberCount: 1,
         },
       });
     }
 
     // 2. Handle Pool Joining Flow
-    let pool = await getPoolByProduct(cleanProductId);
-    if (!pool && cleanProductId !== productId) {
-      pool = await getPoolByProduct(productId);
-    }
+    const { activePool } = await getPoolByProduct(cleanProductId);
 
-    if (!pool) {
+    if (!activePool) {
       return data({ error: "No active group buy pool found for this product" }, { status: 404 });
     }
 
     // Check if customer already joined this pool
-    const existingMember = pool.members.find(
-      (m) => m.customerId === customerId || m.customerEmail === customerEmail
+    const existingMember = activePool.members.find(
+      (m) => m.customerId === effectiveCustomerId || m.customerEmail === customerEmail
     );
     if (existingMember) {
       return data({ error: "You have already joined this pool" }, { status: 400 });
@@ -251,8 +288,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // Join the pool
     const updatedPool = await joinPool({
-      poolId: pool.id,
-      customerId,
+      poolId: activePool.id,
+      customerId: effectiveCustomerId,
       customerEmail,
       quantity,
     });
@@ -263,8 +300,10 @@ export async function action({ request }: ActionFunctionArgs) {
         id: updatedPool.id,
         currentQuantity: updatedPool.currentQuantity,
         targetQuantity: updatedPool.targetQuantity,
+        discountPercent: updatedPool.discountPercent,
         status: updatedPool.status,
         memberCount: updatedPool.members.length,
+        tiers: updatedPool.tiers,
       },
     });
   } catch (error: unknown) {
