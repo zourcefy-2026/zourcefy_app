@@ -178,6 +178,36 @@ export default function PoolsDashboard() {
   );
 }
 
+interface PoolTier {
+  id?: string;
+  targetQuantity: number;
+  discountPercent: number;
+}
+
+interface PoolMember {
+  id?: string;
+  customerEmail: string;
+  customerId: string;
+  quantity: number;
+  joinedAt: string | Date;
+}
+
+interface PoolItem {
+  id: string;
+  productId: string;
+  productTitle: string;
+  targetQuantity: number;
+  currentQuantity: number;
+  discountPercent: number;
+  status: string;
+  createdBy?: string;
+  creatorEmail?: string | null;
+  creatorCustomerId?: string | null;
+  deadline?: string | Date | null;
+  members: PoolMember[];
+  tiers: PoolTier[];
+}
+
 function PoolCard({
   pool,
   isApproving,
@@ -186,7 +216,7 @@ function PoolCard({
   onToggleEdit,
   isSubmitting,
 }: {
-  pool: any;
+  pool: PoolItem;
   isApproving: boolean;
   isEditing: boolean;
   onToggleApprove: () => void;
@@ -197,7 +227,7 @@ function PoolCard({
     Array<{ targetQuantity: string; discountPercent: string }>
   >(
     pool.tiers && pool.tiers.length > 0
-      ? pool.tiers.map((t: any) => ({
+      ? pool.tiers.map((t: PoolTier) => ({
           targetQuantity: String(t.targetQuantity),
           discountPercent: String(t.discountPercent),
         }))
@@ -213,7 +243,7 @@ function PoolCard({
     Array<{ targetQuantity: string; discountPercent: string }>
   >(
     pool.tiers && pool.tiers.length > 0
-      ? pool.tiers.map((t: any) => ({
+      ? pool.tiers.map((t: PoolTier) => ({
           targetQuantity: String(t.targetQuantity),
           discountPercent: String(t.discountPercent),
         }))
@@ -275,7 +305,7 @@ function PoolCard({
               Configured Discount Tiers:
             </Text>
             <InlineStack gap="200" wrap>
-              {pool.tiers.map((t: any, idx: number) => (
+              {pool.tiers.map((t: PoolTier, idx: number) => (
                 <Badge key={idx} tone={pool.currentQuantity >= t.targetQuantity ? "success" : "info"}>
                   {`Tier ${idx + 1}: ${t.targetQuantity} Units → ${t.discountPercent}% OFF`}
                 </Badge>
@@ -293,7 +323,7 @@ function PoolCard({
             <DataTable
               columnContentTypes={["text", "text", "numeric"]}
               headings={["Customer Email", "Joined Date", "Volume"]}
-              rows={pool.members.map((member: any) => [
+              rows={pool.members.map((member: PoolMember) => [
                 member.customerEmail,
                 new Date(member.joinedAt).toLocaleDateString(),
                 `${member.quantity} Units`,
