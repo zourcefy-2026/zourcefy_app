@@ -1,5 +1,8 @@
 import db from "./db.server";
-import type { AdminApiContext } from "@shopify/shopify-app-react-router/server";
+
+export interface GraphQLClient {
+  graphql: (query: string, options?: { variables?: Record<string, any> }) => Promise<Response>;
+}
 
 /**
  * Creates a Shopify DiscountCodeBasic for a completed pool and saves it in the DB.
@@ -9,75 +12,84 @@ import type { AdminApiContext } from "@shopify/shopify-app-react-router/server";
  * The code applies percentage off the specific pool product only.
  */
 export async function generatePoolDiscountCode(
-  admin: AdminApiContext,
+  admin: GraphQLClient,
   poolId: string,
   productId: string,
   discountPercent: number
 ): Promise<string | null> {
+  console.log(`[Zourcefy Discount] Starting code generation for pool=${poolId}, product=${productId}, discount=${discountPercent}%`);
+
   // Idempotency: return existing code if already generated
   const existing = await db.pool.findUnique({
     where: { id: poolId },
     select: { discountCode: true },
   });
   if (existing?.discountCode) {
+    console.log(`[Zourcefy Discount] Returning pre-existing discount code: ${existing.discountCode}`);
     return existing.discountCode;
   }
 
   // Generate a short deterministic code from the pool ID
   const shortId = poolId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8).toUpperCase();
-  const code = `POOL-${shortId}`;
+  let code = `POOL-${shortId}`;
 
   // Ensure productId is in GID format for Shopify GraphQL
   const productGid = productId.startsWith("gid://shopify/Product/")
     ? productId
     : `gid://shopify/Product/${productId}`;
 
-  try {
-    const response = await admin.graphql(
-      `#graphql
-      mutation discountCodeBasicCreate($basicCodeDiscount: DiscountCodeBasicInput!) {
-        discountCodeBasicCreate(basicCodeDiscount: $basicCodeDiscount) {
-          codeDiscountNode {
-            id
-            codeDiscount {
-              ... on DiscountCodeBasic {
-                codes(first: 1) {
-                  nodes { code }
-                }
+  const mutationQuery = `#graphql
+    mutation discountCodeBasicCreate($basicCodeDiscount: DiscountCodeBasicInput!) {
+      discountCodeBasicCreate(basicCodeDiscount: $basicCodeDiscount) {
+        codeDiscountNode {
+          id
+          codeDiscount {
+            ... on DiscountCodeBasic {
+              codes(first: 1) {
+                nodes { code }
               }
             }
           }
-          userErrors { field message }
         }
-      }`,
-      {
-        variables: {
-          basicCodeDiscount: {
-            title: `Zourcefy Group Buy — ${code}`,
-            code,
-            startsAt: new Date().toISOString(),
-            customerGets: {
-              value: { percentage: discountPercent / 100 },
-              items: {
-                products: {
-                  productsToAdd: [productGid],
-                },
-              },
-            },
-            // All customers can use the code (no customer segment restriction)
-            customerSelection: { all: true },
-            // Each customer can only benefit from the discount once
-            appliesOncePerCustomer: true,
+        userErrors { field message }
+      }
+    }`;
+
+  const buildVariables = (codeToUse: string) => ({
+    basicCodeDiscount: {
+      title: `Zourcefy Group Buy — ${codeToUse}`,
+      code: codeToUse,
+      startsAt: new Date().toISOString(),
+      customerGets: {
+        value: { percentage: discountPercent / 100 },
+        items: {
+          products: {
+            productsToAdd: [productGid],
           },
         },
-      }
-    );
+      },
+      customerSelection: { all: true },
+      appliesOncePerCustomer: true,
+    },
+  });
 
-    const result = await response.json();
-    const discountData = result?.data?.discountCodeBasicCreate;
+  try {
+    let response = await admin.graphql(mutationQuery, { variables: buildVariables(code) });
+    let result = await response.json();
+    let discountData = result?.data?.discountCodeBasicCreate;
+
+    // Handle code collision (retry with random suffix)
+    if (discountData?.userErrors?.some((e: { message?: string }) => e.message?.toLowerCase().includes("taken") || e.message?.toLowerCase().includes("exists"))) {
+      const suffix = Math.floor(1000 + Math.random() * 9000);
+      code = `POOL-${shortId}-${suffix}`;
+      console.log(`[Zourcefy Discount] Code collision detected. Retrying with ${code}`);
+      response = await admin.graphql(mutationQuery, { variables: buildVariables(code) });
+      result = await response.json();
+      discountData = result?.data?.discountCodeBasicCreate;
+    }
 
     if (discountData?.userErrors?.length > 0) {
-      console.error("[Zourcefy] Shopify discount creation errors:", discountData.userErrors);
+      console.error("[Zourcefy Discount] Shopify userErrors:", JSON.stringify(discountData.userErrors, null, 2));
       return null;
     }
 
@@ -86,7 +98,7 @@ export async function generatePoolDiscountCode(
     const discountId: string | undefined = discountData?.codeDiscountNode?.id;
 
     if (!createdCode) {
-      console.error("[Zourcefy] Shopify returned no discount code in response.");
+      console.error("[Zourcefy Discount] Shopify returned no discount code in response:", JSON.stringify(result, null, 2));
       return null;
     }
 
@@ -99,10 +111,10 @@ export async function generatePoolDiscountCode(
       },
     });
 
-    console.log(`[Zourcefy] Discount code created for pool ${poolId}: ${createdCode}`);
+    console.log(`[Zourcefy Discount] Successfully created & saved discount code for pool ${poolId}: ${createdCode}`);
     return createdCode;
   } catch (err) {
-    console.error("[Zourcefy] Error creating Shopify discount code:", err);
+    console.error("[Zourcefy Discount] Exception during discount creation:", err);
     return null;
   }
 }

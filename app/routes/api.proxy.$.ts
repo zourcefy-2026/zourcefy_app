@@ -7,24 +7,52 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
 async function getAdminContext(sessionShop?: string, requestUrl?: string) {
   try {
-    let shop = sessionShop;
-    if (!shop && requestUrl) {
-      const url = new URL(requestUrl);
-      shop = url.searchParams.get("shop") || undefined;
+    const url = requestUrl ? new URL(requestUrl) : null;
+    const shop = sessionShop || url?.searchParams.get("shop") || undefined;
+
+    // 1. Find target shop session in DB
+    const dbSession = shop
+      ? await db.session.findFirst({
+          where: { shop, accessToken: { not: "" } },
+          orderBy: { expires: "desc" },
+        })
+      : await db.session.findFirst({
+          where: { accessToken: { not: "" } },
+          orderBy: { expires: "desc" },
+        });
+
+    if (!dbSession) {
+      console.error("[Zourcefy AppProxy] No active session with accessToken found in database.");
+      return undefined;
     }
-    if (!shop) {
-      const activeSession = await db.session.findFirst({
-        where: { accessToken: { not: "" } },
-        orderBy: { expires: "desc" }
-      });
-      shop = activeSession?.shop;
+
+    const targetShop = dbSession.shop;
+
+    // 2. Try official SDK unauthenticated context
+    try {
+      const unauth = await unauthenticated.admin(targetShop);
+      if (unauth?.admin) {
+        return unauth.admin;
+      }
+    } catch (e) {
+      console.warn(`[Zourcefy AppProxy] unauthenticated.admin failed for ${targetShop}, engaging direct GraphQL fallback:`, e);
     }
-    if (shop) {
-      const unauth = await unauthenticated.admin(shop);
-      return unauth.admin;
-    }
+
+    // 3. Failsafe Direct GraphQL Client Fallback using accessToken
+    return {
+      graphql: async (query: string, options?: { variables?: Record<string, any> }) => {
+        return fetch(`https://${targetShop}/admin/api/2025-01/graphql.json`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Shopify-Access-Token": dbSession.accessToken,
+          },
+          body: JSON.stringify({ query, variables: options?.variables }),
+        });
+      },
+    };
   } catch (err) {
-    console.error("[Zourcefy] Could not acquire admin context for app proxy:", err);
+    console.error("[Zourcefy AppProxy] Error acquiring admin context:", err);
   }
   return undefined;
 }
