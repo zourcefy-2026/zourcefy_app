@@ -17,7 +17,7 @@ export async function getActivePools() {
   });
 }
 
-// Get pool by product ID (with creator-pending checking)
+// Get pool by product ID (with creator-pending + completed-member checking)
 export async function getPoolByProduct(
   productId: string,
   requesterEmail?: string,
@@ -51,12 +51,40 @@ export async function getPoolByProduct(
     }
   }
 
+  // Check if the requester is a member of the most recent completed pool
+  // (shown only when there is no active pool so they get their discount link)
+  let completedPool = null;
+  let isPoolMember = false;
+
+  if (!activePool && (requesterEmail || requesterCustomerId)) {
+    const completedPoolRaw = await db.pool.findFirst({
+      where: { productId, status: "COMPLETED" },
+      include: {
+        members: true,
+        tiers: { orderBy: { tierOrder: "asc" } },
+      },
+      orderBy: { updatedAt: "desc" }, // Most recently completed
+    });
+
+    if (completedPoolRaw) {
+      isPoolMember = completedPoolRaw.members.some(
+        (m) =>
+          (requesterEmail && m.customerEmail === requesterEmail) ||
+          (requesterCustomerId && m.customerId === requesterCustomerId)
+      );
+      if (isPoolMember) completedPool = completedPoolRaw;
+    }
+  }
+
   return {
     activePool,
     pendingPool: isCreatorPending ? pendingPool : null,
     isCreatorPending,
+    completedPool,
+    isPoolMember,
   };
 }
+
 
 // Create a new pool
 export async function createPool(data: {

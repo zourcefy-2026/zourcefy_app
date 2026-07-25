@@ -105,6 +105,49 @@
       </div>
     </div>
 
+    <!-- POOL COMPLETED CONTAINER (Visible to pool members after pool hits its target) -->
+    <div id="zourcefy-completed-state" class="zourcefy-hidden" data-variant-id="{{ product.variants.first.id }}">
+      <div class="zourcefy-header">
+        <div class="zourcefy-badge-wrapper">
+          <span class="zourcefy-badge" style="border-color: #10b981; color: #10b981; box-shadow: 0 0 10px rgba(16,185,129,0.4);">🎯 Pool Completed</span>
+        </div>
+        <div id="zourcefy-completed-discount-tag" class="zourcefy-discount-tag" style="color: #10b981; background: rgba(16,185,129,0.1);">--% OFF UNLOCKED</div>
+      </div>
+
+      <h3 class="zourcefy-title">Your Group Buy Discount is Ready!</h3>
+      <p style="color: var(--zourcefy-text-secondary); font-size: 14px; margin-top: -8px; margin-bottom: 20px; line-height: 1.5;">
+        This pool reached its target! As a member, you've unlocked a bulk discount on
+        <strong id="zourcefy-completed-product-title">this product</strong>.
+        Click below — the discount is <strong>applied automatically at checkout</strong>.
+      </p>
+
+      <!-- Savings Summary Card -->
+      <div class="zourcefy-savings-card">
+        <div class="zourcefy-savings-row">
+          <span class="zourcefy-label">Members in Pool</span>
+          <strong id="zourcefy-completed-member-count">--</strong>
+        </div>
+        <div class="zourcefy-savings-row">
+          <span class="zourcefy-label">Your Discount</span>
+          <strong id="zourcefy-completed-discount-value" style="color: #10b981; font-size: 20px;">--%</strong>
+        </div>
+      </div>
+
+      <!-- Auto-Apply Checkout Button -->
+      <a id="zourcefy-checkout-btn" href="#" class="zourcefy-checkout-btn">
+        🛒 Checkout with Discount →
+      </a>
+
+      <!-- Discount code fallback (manual copy) -->
+      <div id="zourcefy-code-fallback" class="zourcefy-hidden" style="margin-top: 12px; text-align: center;">
+        <p style="font-size: 12px; color: var(--zourcefy-text-secondary); margin-bottom: 6px;">Or apply this code manually at checkout:</p>
+        <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 8px 14px;">
+          <code id="zourcefy-discount-code-text" style="font-size: 15px; font-weight: 700; color: #10b981; letter-spacing: 0.05em;">POOL-XXXXXXXX</code>
+          <button onclick="navigator.clipboard.writeText(document.getElementById('zourcefy-discount-code-text').textContent).then(function(){this.textContent='Copied ✓';}).catch(function(){})" style="background: none; border: none; color: #94a3b8; font-size: 12px; cursor: pointer; padding: 0;">Copy</button>
+        </div>
+      </div>
+    </div>
+
     <!-- CREATE POOL CONTAINER (Visible to everyone when no pool exists) -->
     <div id="zourcefy-create-state" class="zourcefy-hidden">
       <div class="zourcefy-header">
@@ -389,6 +432,53 @@
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
+
+  /* Completed pool savings card */
+  .zourcefy-savings-card {
+    background: rgba(16, 185, 129, 0.06);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .zourcefy-savings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* Green checkout button for completed state */
+  .zourcefy-checkout-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    padding: 16px 24px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+    animation: pulse-glow 2.5s ease-in-out infinite;
+  }
+
+  .zourcefy-checkout-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(16, 185, 129, 0.55);
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4); }
+    50% { box-shadow: 0 4px 30px rgba(16, 185, 129, 0.7); }
+  }
 </style>
 
 <script>
@@ -441,28 +531,73 @@
       .then(data => {
         container.classList.remove('zourcefy-widget-hidden');
 
-        // Check Creator-Pending State
+        const completedStateEl = document.getElementById('zourcefy-completed-state');
+
+        // --- COMPLETED POOL STATE (customer is a member of a completed pool) ---
+        if (data.isPoolMember && data.completedPool) {
+          const cp = data.completedPool;
+          const variantId = completedStateEl.getAttribute('data-variant-id');
+
+          // Hide all other states
+          activeStateEl.classList.add('zourcefy-hidden');
+          pendingStateEl.classList.add('zourcefy-hidden');
+          createStateEl.classList.add('zourcefy-hidden');
+          completedStateEl.classList.remove('zourcefy-hidden');
+
+          // Populate fields
+          document.getElementById('zourcefy-completed-product-title').textContent = cp.productTitle;
+          document.getElementById('zourcefy-completed-discount-tag').textContent = cp.discountPercent + '% OFF UNLOCKED';
+          document.getElementById('zourcefy-completed-discount-value').textContent = cp.discountPercent + '%';
+          document.getElementById('zourcefy-completed-member-count').textContent =
+            cp.memberCount + (cp.memberCount === 1 ? ' member' : ' members');
+
+          // Build checkout URL with auto-applied discount code
+          const checkoutBtn = document.getElementById('zourcefy-checkout-btn');
+          if (cp.discountCode && variantId) {
+            checkoutBtn.href = '/cart/' + variantId + ':1?discount=' + cp.discountCode;
+            checkoutBtn.textContent = '🛒 Checkout with ' + cp.discountPercent + '% Off →';
+
+            // Also show the copyable code fallback
+            const fallbackEl = document.getElementById('zourcefy-code-fallback');
+            const codeEl = document.getElementById('zourcefy-discount-code-text');
+            if (fallbackEl && codeEl) {
+              codeEl.textContent = cp.discountCode;
+              fallbackEl.classList.remove('zourcefy-hidden');
+            }
+          } else {
+            // Discount code not yet generated — show a "coming soon" message
+            checkoutBtn.textContent = '⏳ Discount code generating, refresh in a moment…';
+            checkoutBtn.style.opacity = '0.6';
+            checkoutBtn.style.pointerEvents = 'none';
+          }
+          return;
+        }
+
+        // --- PENDING STATE (creator of pending pool) ---
         if (data.isCreatorPending && data.pendingPool) {
           activeStateEl.classList.add('zourcefy-hidden');
           createStateEl.classList.add('zourcefy-hidden');
+          document.getElementById('zourcefy-completed-state').classList.add('zourcefy-hidden');
           pendingStateEl.classList.remove('zourcefy-hidden');
           return;
         }
 
-        // Check if Active Pool Exists
+        // --- NO ACTIVE POOL ---
         if (!data || !data.hasActivePool || !data.pool) {
           activeStateEl.classList.add('zourcefy-hidden');
           pendingStateEl.classList.add('zourcefy-hidden');
+          document.getElementById('zourcefy-completed-state').classList.add('zourcefy-hidden');
           createStateEl.classList.remove('zourcefy-hidden');
           return;
         }
 
         const pool = data.pool;
 
-        // Show active state
+        // --- ACTIVE POOL STATE ---
         activeStateEl.classList.remove('zourcefy-hidden');
         pendingStateEl.classList.add('zourcefy-hidden');
         createStateEl.classList.add('zourcefy-hidden');
+        document.getElementById('zourcefy-completed-state').classList.add('zourcefy-hidden');
 
         titleEl.textContent = pool.productTitle;
         discountEl.textContent = `Unlocks ${pool.discountPercent}% Off`;
@@ -538,9 +673,21 @@
             messageBoxEl.className = 'zourcefy-message-box error';
             messageBoxEl.textContent = data.error;
           } else if (data.success) {
-            messageBoxEl.className = 'zourcefy-message-box success';
-            messageBoxEl.innerHTML = `<strong>🎉 Joined Pool!</strong> Successfully committed ${payload.quantity} Units.`;
-            setTimeout(() => { window.location.reload(); }, 1800);
+            // Check if the pool just completed and we have a discount code
+            if (data.pool && data.pool.status === 'COMPLETED' && data.pool.discountCode) {
+              const variantId = document.getElementById('zourcefy-completed-state').getAttribute('data-variant-id');
+              const checkoutUrl = '/cart/' + variantId + ':1?discount=' + data.pool.discountCode;
+              messageBoxEl.className = 'zourcefy-message-box success';
+              messageBoxEl.innerHTML = `<strong>🎯 Pool Completed!</strong> You've unlocked <strong>${data.pool.discountPercent}% off</strong>! 
+                <a href="${checkoutUrl}" style="color: #10b981; font-weight: 700; display: block; margin-top: 8px;">
+                  🛒 Checkout with Discount Now →
+                </a>`;
+              setTimeout(() => { window.location.reload(); }, 4000);
+            } else {
+              messageBoxEl.className = 'zourcefy-message-box success';
+              messageBoxEl.innerHTML = `<strong>🎉 Joined Pool!</strong> Successfully committed ${payload.quantity} Units.`;
+              setTimeout(() => { window.location.reload(); }, 1800);
+            }
           }
         })
         .catch(err => {

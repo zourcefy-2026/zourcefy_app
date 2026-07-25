@@ -1,12 +1,13 @@
 import { authenticate } from "../shopify.server";
 import { getPoolByProduct, joinPool, createPool } from "../pools.server";
+import { generatePoolDiscountCode } from "../discount.server";
 import { data, redirect } from "react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
 // GET request: Fetch pool details or serve the integrated pool creation page
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
-    await authenticate.public.appProxy(request);
+    const { admin } = await authenticate.public.appProxy(request);
 
     const url = new URL(request.url);
 
@@ -97,20 +98,58 @@ export async function loader({ request }: LoaderFunctionArgs) {
       : productId;
 
     let poolData = await getPoolByProduct(cleanProductId, requesterEmail, requesterCustomerId);
-    if (!poolData.activePool && !poolData.pendingPool && cleanProductId !== productId) {
+    if (!poolData.activePool && !poolData.pendingPool && !poolData.completedPool && cleanProductId !== productId) {
       poolData = await getPoolByProduct(productId, requesterEmail, requesterCustomerId);
     }
 
-    const { activePool, pendingPool, isCreatorPending } = poolData;
+    const { activePool, pendingPool, isCreatorPending, completedPool, isPoolMember } = poolData;
+
+    // --- Completed pool: member gets their discount code ---
+    if (isPoolMember && completedPool) {
+      // Lazy discount code generation: if pool is completed but code not yet created, generate it now
+      let discountCode = completedPool.discountCode;
+      if (!discountCode) {
+        try {
+          discountCode = await generatePoolDiscountCode(
+            admin,
+            completedPool.id,
+            completedPool.productId,
+            completedPool.discountPercent
+          );
+        } catch (e) {
+          console.error("[Zourcefy] Lazy discount generation failed:", e);
+        }
+      }
+
+      return data({
+        hasPool: true,
+        hasActivePool: false,
+        isCreatorPending: false,
+        isPoolMember: true,
+        pool: null,
+        pendingPool: null,
+        completedPool: {
+          id: completedPool.id,
+          productId: completedPool.productId,
+          productTitle: completedPool.productTitle,
+          currentQuantity: completedPool.currentQuantity,
+          targetQuantity: completedPool.targetQuantity,
+          discountPercent: completedPool.discountPercent,
+          memberCount: completedPool.members.length,
+          discountCode: discountCode ?? null,
+        },
+      });
+    }
 
     if (!activePool && !isCreatorPending) {
-      return data({ hasPool: false, hasActivePool: false, isCreatorPending: false });
+      return data({ hasPool: false, hasActivePool: false, isCreatorPending: false, isPoolMember: false });
     }
 
     return data({
       hasPool: true,
       hasActivePool: !!activePool,
       isCreatorPending,
+      isPoolMember: false,
       pool: activePool
         ? {
             id: activePool.id,
@@ -133,6 +172,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
             createdAt: pendingPool.createdAt,
           }
         : null,
+      completedPool: null,
     });
   } catch (error: unknown) {
     console.error("Error in app proxy loader:", error);
@@ -143,7 +183,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 // POST request: Create or join the pool
 export async function action({ request }: ActionFunctionArgs) {
   try {
-    await authenticate.public.appProxy(request);
+    const { admin } = await authenticate.public.appProxy(request);
 
     if (request.method !== "POST") {
       return data({ error: "Method not allowed" }, { status: 405 });
@@ -294,6 +334,21 @@ export async function action({ request }: ActionFunctionArgs) {
       quantity,
     });
 
+    // If the pool just completed, generate the Shopify discount code immediately
+    let discountCode: string | null = null;
+    if (updatedPool.status === "COMPLETED") {
+      try {
+        discountCode = await generatePoolDiscountCode(
+          admin,
+          updatedPool.id,
+          updatedPool.productId,
+          updatedPool.discountPercent
+        );
+      } catch (e) {
+        console.error("[Zourcefy] Discount generation after join failed:", e);
+      }
+    }
+
     return data({
       success: true,
       pool: {
@@ -304,6 +359,7 @@ export async function action({ request }: ActionFunctionArgs) {
         status: updatedPool.status,
         memberCount: updatedPool.members.length,
         tiers: updatedPool.tiers,
+        discountCode: discountCode ?? updatedPool.discountCode ?? null,
       },
     });
   } catch (error: unknown) {

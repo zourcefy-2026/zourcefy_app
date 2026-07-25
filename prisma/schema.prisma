@@ -42,6 +42,8 @@ model Pool {
   creatorEmail      String?
   creatorCustomerId String?
   deadline          DateTime?
+  discountCode      String?      // Shopify discount code e.g. POOL-ABC123
+  discountCodeId    String?      // Shopify GID of the discount node
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
   members           PoolMember[]
