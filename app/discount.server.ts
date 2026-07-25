@@ -1,4 +1,5 @@
 import db from "./db.server";
+import type { AdminApiContext } from "@shopify/shopify-app-react-router/server";
 
 /**
  * Creates a Shopify DiscountCodeBasic for a completed pool and saves it in the DB.
@@ -8,7 +9,7 @@ import db from "./db.server";
  * The code applies percentage off the specific pool product only.
  */
 export async function generatePoolDiscountCode(
-  admin: any,
+  admin: AdminApiContext,
   poolId: string,
   productId: string,
   discountPercent: number
