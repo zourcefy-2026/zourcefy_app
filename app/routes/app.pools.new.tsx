@@ -14,8 +14,8 @@ import {
 } from "@shopify/polaris";
 import { useState } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
-import { createPool } from "../pools.server";
-import { authenticate } from "../shopify.server";
+import { createPool } from "../server/pools.server";
+import { authenticate } from "../server/shopify.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await authenticate.admin(request);

@@ -1,6 +1,6 @@
-import { authenticate } from "../shopify.server";
-import { getPoolByProduct, joinPool, createPool } from "../pools.server";
-import { generatePoolDiscountCode } from "../discount.server";
+import { authenticate } from "../server/shopify.server";
+import { getPoolByProduct, joinPool, createPool } from "../server/pools.server";
+import { generatePoolDiscountCode } from "../server/discount.server";
 import { data, redirect } from "react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 

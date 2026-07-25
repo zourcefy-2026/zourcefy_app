@@ -17,8 +17,9 @@ import {
   Divider,
 } from "@shopify/polaris";
 import { useState, useCallback, useEffect } from "react";
-import { getAllPools, approvePool, rejectPool, updatePool, deletePool } from "../pools.server";
-import { authenticate } from "../shopify.server";
+import { getAllPools, approvePool, rejectPool, updatePool, deletePool } from "../server/pools.server";
+import { authenticate } from "../server/shopify.server";
+import type { PoolTier, PoolMember, PoolItem } from "../lib/types";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await authenticate.admin(request);
@@ -178,35 +179,7 @@ export default function PoolsDashboard() {
   );
 }
 
-interface PoolTier {
-  id?: string;
-  targetQuantity: number;
-  discountPercent: number;
-}
 
-interface PoolMember {
-  id?: string;
-  customerEmail: string;
-  customerId: string;
-  quantity: number;
-  joinedAt: string | Date;
-}
-
-interface PoolItem {
-  id: string;
-  productId: string;
-  productTitle: string;
-  targetQuantity: number;
-  currentQuantity: number;
-  discountPercent: number;
-  status: string;
-  createdBy?: string;
-  creatorEmail?: string | null;
-  creatorCustomerId?: string | null;
-  deadline?: string | Date | null;
-  members: PoolMember[];
-  tiers: PoolTier[];
-}
 
 function PoolCard({
   pool,

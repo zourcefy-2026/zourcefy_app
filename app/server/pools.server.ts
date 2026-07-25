@@ -85,7 +85,6 @@ export async function getPoolByProduct(
   };
 }
 
-
 // Create a new pool
 export async function createPool(data: {
   productId: string;
@@ -142,10 +141,7 @@ export async function createPool(data: {
 }
 
 // Approve a pending pool and assign its discount tiers
-export async function approvePool(
-  poolId: string,
-  tiers: TierInput[]
-) {
+export async function approvePool(poolId: string, tiers: TierInput[]) {
   if (!tiers || tiers.length === 0) {
     throw new Error("At least one discount tier is required to approve a pool.");
   }
@@ -259,15 +255,13 @@ export async function joinPool(data: {
       (t) => pool.currentQuantity >= t.targetQuantity
     );
     if (unlockedTiers.length > 0) {
-      // Pick the tier with the highest target reached
       const currentTier = unlockedTiers[unlockedTiers.length - 1];
       activeDiscount = currentTier.discountPercent;
     }
   }
 
   // Check if target is reached
-  const maxTarget = pool.targetQuantity;
-  const isCompleted = pool.currentQuantity >= maxTarget;
+  const isCompleted = pool.currentQuantity >= pool.targetQuantity;
 
   pool = await db.pool.update({
     where: { id: data.poolId },
