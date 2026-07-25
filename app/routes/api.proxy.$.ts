@@ -108,7 +108,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     if (isPoolMember && completedPool) {
       // Lazy discount code generation: if pool is completed but code not yet created, generate it now
       let discountCode = completedPool.discountCode;
-      if (!discountCode) {
+      if (!discountCode && admin) {
         try {
           discountCode = await generatePoolDiscountCode(
             admin,
@@ -336,7 +336,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // If the pool just completed, generate the Shopify discount code immediately
     let discountCode: string | null = null;
-    if (updatedPool.status === "COMPLETED") {
+    if (updatedPool.status === "COMPLETED" && admin) {
       try {
         discountCode = await generatePoolDiscountCode(
           admin,
