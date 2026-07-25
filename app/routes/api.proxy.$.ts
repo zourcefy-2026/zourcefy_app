@@ -1,13 +1,39 @@
-import { authenticate } from "../server/shopify.server";
+import { authenticate, unauthenticated } from "../server/shopify.server";
 import { getPoolByProduct, joinPool, createPool } from "../server/pools.server";
 import { generatePoolDiscountCode } from "../server/discount.server";
+import db from "../server/db.server";
 import { data, redirect } from "react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+
+async function getAdminContext(sessionShop?: string, requestUrl?: string) {
+  try {
+    let shop = sessionShop;
+    if (!shop && requestUrl) {
+      const url = new URL(requestUrl);
+      shop = url.searchParams.get("shop") || undefined;
+    }
+    if (!shop) {
+      const activeSession = await db.session.findFirst({
+        where: { accessToken: { not: "" } },
+        orderBy: { expires: "desc" }
+      });
+      shop = activeSession?.shop;
+    }
+    if (shop) {
+      const unauth = await unauthenticated.admin(shop);
+      return unauth.admin;
+    }
+  } catch (err) {
+    console.error("[Zourcefy] Could not acquire admin context for app proxy:", err);
+  }
+  return undefined;
+}
 
 // GET request: Fetch pool details or serve the integrated pool creation page
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
-    const { admin } = await authenticate.public.appProxy(request);
+    const { session } = await authenticate.public.appProxy(request);
+    const admin = await getAdminContext(session?.shop, request.url);
 
     const url = new URL(request.url);
 
@@ -183,7 +209,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 // POST request: Create or join the pool
 export async function action({ request }: ActionFunctionArgs) {
   try {
-    const { admin } = await authenticate.public.appProxy(request);
+    const { session } = await authenticate.public.appProxy(request);
+    const admin = await getAdminContext(session?.shop, request.url);
 
     if (request.method !== "POST") {
       return data({ error: "Method not allowed" }, { status: 405 });
